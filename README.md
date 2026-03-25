@@ -56,4 +56,4 @@ docker run --gpus all forestsight --epochs 50
 
 ## Dataset
 
-[Forest Aerial Images for Segmentation](https://www.kaggle.com/datasets/quadeer15sh/augmented-forest-segmentation) (Kaggle). Auto-downloaded via `kagglehub`.
+[Forest Aerial Images for Segmentation](https://www.kaggle.com/datasets/quadeer15sh/augmented-forest-segmentation) (Kaggle). Auto-downloaded via `kagglehub`
