@@ -13,13 +13,18 @@ from src.models import MODEL_REGISTRY, build_model
 from src.trainer import evaluate, train_model
 
 
+MODEL_CHOICES = tuple(sorted(MODEL_REGISTRY.values()))
+
+
 def main():
     parser = argparse.ArgumentParser(description="ForestSight AI -- Train forest segmentation models")
-    parser.add_argument("--epochs", type=int, default=None)
-    parser.add_argument("--batch-size", type=int, default=None)
-    parser.add_argument("--lr", type=float, default=None)
-    parser.add_argument("--image-size", type=int, default=None)
-    parser.add_argument("--models", nargs="+", default=None,
+    parser.add_argument("--epochs", type=int, default=None, help="Number of training epochs")
+    parser.add_argument("--batch-size", type=int, default=None, help="Batch size")
+    parser.add_argument("--lr", type=float, default=None, help="Learning rate")
+    parser.add_argument("--image-size", type=int, default=None, help="Square input image size")
+    parser.add_argument("--num-workers", type=int, default=None, help="DataLoader worker processes")
+    parser.add_argument("--checkpoint-dir", type=str, default=None, help="Directory for checkpoints/results")
+    parser.add_argument("--models", nargs="+", default=None, choices=MODEL_CHOICES,
                         help="Architectures to train: unet, unet_attention, deeplabv3plus")
     parser.add_argument("--data-dir", type=str, default=None,
                         help="Path to dataset. Downloads from Kaggle if not provided.")
@@ -35,7 +40,13 @@ def main():
         cfg.lr = args.lr
     if args.image_size is not None:
         cfg.image_size = args.image_size
+    if args.num_workers is not None:
+        cfg.num_workers = args.num_workers
+    if args.checkpoint_dir is not None:
+        cfg.checkpoint_dir = Path(args.checkpoint_dir)
+        cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+    cfg.validate()
     seed_everything(cfg.seed)
     print(f"Device: {cfg.device} | AMP: {cfg.use_amp}")
 

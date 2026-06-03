@@ -27,9 +27,24 @@ class Config:
     use_amp: bool = field(init=False)
 
     def __post_init__(self):
+        self.validate()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.use_amp = torch.cuda.is_available()
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    def validate(self) -> None:
+        if self.epochs <= 0:
+            raise ValueError("epochs must be greater than 0")
+        if self.batch_size <= 0:
+            raise ValueError("batch_size must be greater than 0")
+        if self.image_size <= 0:
+            raise ValueError("image_size must be greater than 0")
+        if self.num_workers < 0:
+            raise ValueError("num_workers must be zero or greater")
+        if self.lr <= 0:
+            raise ValueError("lr must be greater than 0")
+        if self.weight_decay < 0:
+            raise ValueError("weight_decay must be zero or greater")
 
 
 def seed_everything(seed: int):

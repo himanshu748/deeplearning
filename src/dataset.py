@@ -7,8 +7,9 @@ import cv2
 import numpy as np
 import torch
 from albumentations.pytorch import ToTensorV2
-from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
+
+from .splits import split_pairs
 
 
 def get_train_transforms(image_size: int = 256) -> A.Compose:
@@ -43,8 +44,12 @@ class ForestDataset(Dataset):
     def __getitem__(self, idx):
         img_path, mask_path = self.pairs[idx]
         image = cv2.imread(str(img_path))
+        if image is None:
+            raise FileNotFoundError(f"Could not read image file: {img_path}")
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+        if mask is None:
+            raise FileNotFoundError(f"Could not read mask file: {mask_path}")
         mask = (mask > 127).astype(np.float32)
 
         if self.transform:
@@ -60,8 +65,11 @@ class ForestDataset(Dataset):
 
 
 def find_data_dirs(base_path: Path) -> Tuple[Optional[Path], Optional[Path]]:
+    if not base_path.exists():
+        raise FileNotFoundError(f"Dataset path does not exist: {base_path}")
+
     img_dir, mask_dir = None, None
-    for root, dirs, files in os.walk(base_path):
+    for root, _, _ in os.walk(base_path):
         name = os.path.basename(root).lower()
         if name in ("images", "image", "img", "forest images"):
             img_dir = Path(root)
@@ -135,12 +143,11 @@ def create_dataloaders(
     num_workers: int = 4,
     seed: int = 42,
 ) -> Tuple[DataLoader, DataLoader, DataLoader, list, list, list]:
-    train_pairs, temp = train_test_split(
-        pairs, test_size=1 - train_ratio, random_state=seed
-    )
-    relative_test = (1 - train_ratio - val_ratio) / (1 - train_ratio)
-    val_pairs, test_pairs = train_test_split(
-        temp, test_size=relative_test, random_state=seed
+    train_pairs, val_pairs, test_pairs = split_pairs(
+        pairs,
+        train_ratio=train_ratio,
+        val_ratio=val_ratio,
+        seed=seed,
     )
 
     train_ds = ForestDataset(train_pairs, transform=get_train_transforms(image_size))

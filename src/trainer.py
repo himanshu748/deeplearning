@@ -33,6 +33,9 @@ class EarlyStopping:
 
 
 def _run_epoch(model, loader, criterion, device, use_amp, optimizer=None, scaler=None):
+    if len(loader) == 0:
+        raise ValueError("DataLoader is empty; cannot run an epoch")
+
     is_train = optimizer is not None
     model.train() if is_train else model.eval()
     total_loss = 0.0
@@ -82,6 +85,9 @@ def train_model(
     bce_weight: float = 0.5,
     checkpoint_dir: Path = Path("checkpoints"),
 ):
+    if epochs <= 0:
+        raise ValueError("epochs must be greater than 0")
+
     model = model.to(device)
     criterion = DiceBCELoss(dice_weight, bce_weight)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -89,7 +95,7 @@ def train_model(
     scaler = GradScaler("cuda", enabled=use_amp)
     early_stop = EarlyStopping(patience=patience)
 
-    best_iou = 0.0
+    best_iou = float("-inf")
     history = {"train_loss": [], "val_loss": [], "train_iou": [], "val_iou": [], "lr": []}
     ckpt_path = checkpoint_dir / f"{architecture}_best.pth"
 
