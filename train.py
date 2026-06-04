@@ -82,8 +82,18 @@ def summarize_dataset(pairs: list[tuple[Path, Path]], cfg: Config) -> dict[str, 
     }
 
 
-def print_dry_run_summary(dataset_path: Path, pairs: list[tuple[Path, Path]], cfg: Config) -> None:
+def selected_models(models: list[str] | None) -> list[str]:
+    return list(models or MODEL_CHOICES)
+
+
+def print_dry_run_summary(
+    dataset_path: Path,
+    pairs: list[tuple[Path, Path]],
+    cfg: Config,
+    models: list[str] | None = None,
+) -> None:
     split_summary = summarize_dataset(pairs, cfg)
+    model_names = selected_models(models)
     print("\nDry run complete")
     print(f"- dataset: {dataset_path}")
     print(f"- total pairs: {split_summary['total_pairs']}")
@@ -95,7 +105,7 @@ def print_dry_run_summary(dataset_path: Path, pairs: list[tuple[Path, Path]], cf
     )
     print(f"- image size: {cfg.image_size}")
     print(f"- batch size: {cfg.batch_size}")
-    print(f"- models: {', '.join(MODEL_CHOICES)}")
+    print(f"- models: {', '.join(model_names)}")
 
 
 def require_kagglehub():
@@ -140,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Total pairs: {len(pairs)}")
 
     if args.dry_run:
-        print_dry_run_summary(dataset_path, pairs, cfg)
+        print_dry_run_summary(dataset_path, pairs, cfg, args.models)
         return 0
 
     cfg.initialize_runtime()
@@ -159,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
         seed=cfg.seed,
     )
 
-    archs = args.models or list(MODEL_REGISTRY.values())
+    archs = selected_models(args.models)
     name_for = {v: k for k, v in MODEL_REGISTRY.items()}
     test_results = {}
 

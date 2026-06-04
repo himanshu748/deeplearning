@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -36,6 +37,25 @@ class TrainCliTest(unittest.TestCase):
                 "test_pairs": 1,
             },
         )
+
+    def test_selected_models_defaults_to_all_model_choices(self):
+        self.assertEqual(train.selected_models(None), list(train.MODEL_CHOICES))
+
+    def test_dry_run_summary_reports_selected_models(self):
+        pairs = [(Path(f"image-{idx}.png"), Path(f"mask-{idx}.png")) for idx in range(10)]
+        cfg = Config(seed=7)
+
+        with patch("sys.stdout", new_callable=StringIO) as stdout:
+            train.print_dry_run_summary(
+                Path("/tmp/forest-data"),
+                pairs,
+                cfg,
+                models=["unet"],
+            )
+
+        output = stdout.getvalue()
+        self.assertIn("- models: unet", output)
+        self.assertNotIn("deeplabv3plus", output)
 
     def test_resolve_dataset_path_expands_existing_path(self):
         with tempfile.TemporaryDirectory() as tmp:
