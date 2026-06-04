@@ -2,6 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from PIL import Image
+
 from src.dataset import find_data_dirs, get_mask_path, load_pairs, validate_pair_files
 
 
@@ -48,8 +50,8 @@ class DatasetDiscoveryTest(unittest.TestCase):
             root = Path(tmp)
             image = root / "image.png"
             mask = root / "mask.png"
-            image.write_bytes(b"image")
-            mask.write_bytes(b"mask")
+            write_png(image)
+            write_png(mask)
 
             validate_pair_files([(image, mask)])
 
@@ -63,6 +65,32 @@ class DatasetDiscoveryTest(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "mask file is empty"):
                 validate_pair_files([(image, mask)])
+
+    def test_validate_pair_files_rejects_corrupt_image(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            image = root / "image.png"
+            mask = root / "mask.png"
+            image.write_bytes(b"not an image")
+            write_png(mask)
+
+            with self.assertRaisesRegex(ValueError, "not a readable image"):
+                validate_pair_files([(image, mask)])
+
+    def test_validate_pair_files_rejects_mismatched_dimensions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            image = root / "image.png"
+            mask = root / "mask.png"
+            write_png(image, size=(4, 4))
+            write_png(mask, size=(2, 4))
+
+            with self.assertRaisesRegex(ValueError, "dimensions differ"):
+                validate_pair_files([(image, mask)])
+
+
+def write_png(path: Path, size: tuple[int, int] = (2, 2)) -> None:
+    Image.new("RGB", size, color=(255, 255, 255)).save(path)
 
 
 if __name__ == "__main__":

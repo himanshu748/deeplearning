@@ -220,7 +220,7 @@ forest_detection/
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR-01 | Use a local dataset by default; download Kaggle data only when explicitly requested | High |
-| FR-02 | Validate image-mask pairs | High |
+| FR-02 | Validate image-mask pairing, image decodability, and matching dimensions | High |
 | FR-03 | Train/Val/Test split (70/15/15) | High |
 | FR-04 | Albumentations augmentation | High |
 | FR-05 | PyTorch DataLoader with configurable batch size | High |
