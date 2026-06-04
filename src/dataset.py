@@ -139,6 +139,31 @@ def load_pairs(dataset_path: Path) -> list[tuple[Path, Path]]:
     return pairs
 
 
+def validate_pair_files(pairs: list[tuple[Path, Path]]) -> None:
+    """Validate paired files are regular, non-empty, and readable."""
+    for pair_index, (img_path, mask_path) in enumerate(pairs, start=1):
+        for label, path in (("image", img_path), ("mask", mask_path)):
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"Paired {label} file is missing at pair {pair_index}: {path}"
+                )
+            if not path.is_file():
+                raise FileNotFoundError(
+                    f"Paired {label} path is not a file at pair {pair_index}: {path}"
+                )
+            try:
+                with path.open("rb") as handle:
+                    sample = handle.read(1)
+            except OSError as exc:
+                raise OSError(
+                    f"Paired {label} file is not readable at pair {pair_index}: {path}"
+                ) from exc
+            if not sample:
+                raise ValueError(
+                    f"Paired {label} file is empty at pair {pair_index}: {path}"
+                )
+
+
 def create_dataloaders(
     pairs: list[tuple[Path, Path]],
     train_ratio: float = 0.70,

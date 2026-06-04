@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from src.config import Config, seed_everything
-from src.dataset import load_pairs
+from src.dataset import load_pairs, validate_pair_files
 from src.models import MODEL_REGISTRY
 from src.splits import split_pairs
 
@@ -158,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Dataset: {dataset_path}")
 
     pairs = load_pairs(dataset_path)
+    validate_pair_files(pairs)
     print(f"Total pairs: {len(pairs)}")
 
     if args.dry_run:

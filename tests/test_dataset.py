@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.dataset import find_data_dirs, get_mask_path, load_pairs
+from src.dataset import find_data_dirs, get_mask_path, load_pairs, validate_pair_files
 
 
 class DatasetDiscoveryTest(unittest.TestCase):
@@ -42,6 +42,27 @@ class DatasetDiscoveryTest(unittest.TestCase):
 
             with self.assertRaisesRegex(FileNotFoundError, "No valid image-mask pairs"):
                 load_pairs(root)
+
+    def test_validate_pair_files_accepts_readable_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            image = root / "image.png"
+            mask = root / "mask.png"
+            image.write_bytes(b"image")
+            mask.write_bytes(b"mask")
+
+            validate_pair_files([(image, mask)])
+
+    def test_validate_pair_files_rejects_empty_paired_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            image = root / "image.png"
+            mask = root / "mask.png"
+            image.write_bytes(b"image")
+            mask.touch()
+
+            with self.assertRaisesRegex(ValueError, "mask file is empty"):
+                validate_pair_files([(image, mask)])
 
 
 if __name__ == "__main__":

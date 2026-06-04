@@ -35,7 +35,7 @@ The CLI is local-first by default. If `--data-dir` is omitted, it refuses to con
 --data-dir        Path to local dataset
 --download-data   Download Kaggle dataset if --data-dir is omitted
 --seed            Random seed (default: 42)
---dry-run         Validate config, dataset pairing, and splits without training
+--dry-run         Validate config, dataset pairing/readability, and splits without training
 ```
 
 ## Verification
@@ -47,9 +47,9 @@ PYTHONPYCACHEPREFIX=/private/tmp/deeplearning-pycache python3 -m compileall trai
 python3 -m unittest discover -s tests
 ```
 
-The lightweight tests cover split determinism, configuration validation, CLI dry-run helpers, import-safe model validation, and local dataset image/mask pairing. They do not download Kaggle data or train a model.
+The lightweight tests cover split determinism, configuration validation, CLI dry-run helpers, import-safe model validation, local dataset image/mask pairing, and paired-file readability checks. They do not download Kaggle data or train a model.
 
-Use `--dry-run` before any GPU run to confirm the local dataset is discoverable and produces non-empty train/validation/test splits. With `--data-dir`, this path does not build models, create DataLoaders, initialize Torch runtime state, or create checkpoint directories:
+Use `--dry-run` before any GPU run to confirm the local dataset is discoverable, paired files are readable and non-empty, and splits produce non-empty train/validation/test sets. With `--data-dir`, this path does not build models, create DataLoaders, initialize Torch runtime state, or create checkpoint directories:
 
 ```bash
 python train.py --data-dir /path/to/forest-dataset --dry-run
