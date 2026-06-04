@@ -40,9 +40,11 @@ If `--data-dir` is omitted, the CLI downloads the Kaggle dataset with `kagglehub
 These checks run without downloading the dataset:
 
 ```bash
-python3 -m compileall train.py src tests
+PYTHONPYCACHEPREFIX=/private/tmp/deeplearning-pycache python3 -m compileall train.py src tests
 python3 -m unittest discover -s tests
 ```
+
+The lightweight tests cover split determinism, configuration validation, and local dataset image/mask pairing. They do not download Kaggle data or train a model.
 
 ## Docker
 

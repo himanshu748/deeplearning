@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-import torch
+
+from .splits import validate_split_ratios
 
 
 @dataclass
@@ -23,16 +24,18 @@ class Config:
     val_ratio: float = 0.15
     test_ratio: float = 0.15
     checkpoint_dir: Path = field(default_factory=lambda: Path("checkpoints"))
-    device: torch.device = field(init=False)
+    device: object = field(init=False)
     use_amp: bool = field(init=False)
 
     def __post_init__(self):
         self.validate()
+        torch = require_torch()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.use_amp = torch.cuda.is_available()
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     def validate(self) -> None:
+        validate_split_ratios(self.train_ratio, self.val_ratio)
         if self.epochs <= 0:
             raise ValueError("epochs must be greater than 0")
         if self.batch_size <= 0:
@@ -45,9 +48,16 @@ class Config:
             raise ValueError("lr must be greater than 0")
         if self.weight_decay < 0:
             raise ValueError("weight_decay must be zero or greater")
+        if self.dice_weight < 0:
+            raise ValueError("dice_weight must be zero or greater")
+        if self.bce_weight < 0:
+            raise ValueError("bce_weight must be zero or greater")
+        if self.dice_weight + self.bce_weight <= 0:
+            raise ValueError("dice_weight + bce_weight must be greater than 0")
 
 
 def seed_everything(seed: int):
+    torch = require_torch()
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
@@ -55,3 +65,13 @@ def seed_everything(seed: int):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def require_torch():
+    try:
+        import torch
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "PyTorch is required for training. Install dependencies with `pip install -r requirements.txt`."
+        ) from exc
+    return torch
