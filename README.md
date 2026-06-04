@@ -36,6 +36,7 @@ The CLI is local-first by default. If `--data-dir` is omitted, it refuses to con
 --download-data   Download Kaggle dataset if --data-dir is omitted
 --seed            Random seed (default: 42)
 --dry-run         Validate config, dataset pairing/readability, and splits without training
+--split-manifest  Optional JSON path for the deterministic train/val/test split manifest
 ```
 
 ## Verification
@@ -53,6 +54,12 @@ Use `--dry-run` before any GPU run to confirm the local dataset is discoverable,
 
 ```bash
 python train.py --data-dir /path/to/forest-dataset --dry-run
+```
+
+To save the exact deterministic split assignment for review or repeat runs:
+
+```bash
+python train.py --data-dir /path/to/forest-dataset --dry-run --split-manifest splits.json
 ```
 
 ## Docker

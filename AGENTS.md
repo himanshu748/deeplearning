@@ -7,6 +7,7 @@ This repository is a legacy ML project for forest-cover semantic segmentation. K
 - `PYTHONPYCACHEPREFIX=/private/tmp/deeplearning-pycache python3 -m compileall train.py src tests`
 - `python3 -m unittest discover -s tests`
 - `python train.py --data-dir <dataset> --dry-run`
+- `python train.py --data-dir <dataset> --dry-run --split-manifest /tmp/splits.json`
 - `python train.py --data-dir <dataset> --epochs 1 --models unet`
 - `python train.py --download-data --dry-run` only when Kaggle credentials/network are intentionally available
 

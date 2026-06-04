@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from io import StringIO
@@ -60,6 +61,54 @@ class TrainCliTest(unittest.TestCase):
         output = stdout.getvalue()
         self.assertIn("- models: unet", output)
         self.assertNotIn("deeplabv3plus", output)
+
+    def test_split_manifest_records_relative_deterministic_splits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset = Path(tmp)
+            pairs = [
+                (
+                    dataset / "images" / f"image-{idx}.png",
+                    dataset / "masks" / f"mask-{idx}.png",
+                )
+                for idx in range(10)
+            ]
+            cfg = Config(seed=7)
+
+            manifest = train.build_split_manifest(dataset, pairs, cfg, models=["unet"])
+
+        self.assertEqual(manifest["schema_version"], 1)
+        self.assertEqual(manifest["seed"], 7)
+        self.assertEqual(manifest["models"], ["unet"])
+        self.assertEqual(len(manifest["splits"]["train"]), 7)
+        self.assertEqual(len(manifest["splits"]["val"]), 2)
+        self.assertEqual(len(manifest["splits"]["test"]), 1)
+        self.assertTrue(manifest["splits"]["train"][0]["image"].startswith("images/"))
+
+    def test_write_split_manifest_creates_json_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset = root / "dataset"
+            output_path = root / "artifacts" / "splits.json"
+            pairs = [
+                (
+                    dataset / "images" / f"image-{idx}.png",
+                    dataset / "masks" / f"mask-{idx}.png",
+                )
+                for idx in range(3)
+            ]
+
+            train.write_split_manifest(
+                output_path,
+                dataset,
+                pairs,
+                Config(seed=1),
+                ["unet"],
+            )
+
+            manifest = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(set(manifest["splits"]), {"train", "val", "test"})
+        self.assertEqual(manifest["models"], ["unet"])
 
     def test_resolve_dataset_path_expands_existing_path(self):
         with tempfile.TemporaryDirectory() as tmp:

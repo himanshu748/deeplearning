@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -37,6 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Validate configuration, dataset pairing, and deterministic splits without training.",
+    )
+    parser.add_argument(
+        "--split-manifest",
+        type=str,
+        default=None,
+        help="Write the deterministic train/val/test split manifest to this JSON path.",
     )
     return parser
 
@@ -91,6 +98,63 @@ def summarize_dataset(pairs: list[tuple[Path, Path]], cfg: Config) -> dict[str, 
         "val_pairs": len(val_pairs),
         "test_pairs": len(test_pairs),
     }
+
+
+def build_split_manifest(
+    dataset_path: Path,
+    pairs: list[tuple[Path, Path]],
+    cfg: Config,
+    models: list[str] | None = None,
+) -> dict[str, object]:
+    train_pairs, val_pairs, test_pairs = split_pairs(
+        pairs,
+        train_ratio=cfg.train_ratio,
+        val_ratio=cfg.val_ratio,
+        seed=cfg.seed,
+    )
+
+    def serialize_pair(pair: tuple[Path, Path]) -> dict[str, str]:
+        image_path, mask_path = pair
+        return {
+            "image": _display_path(image_path, dataset_path),
+            "mask": _display_path(mask_path, dataset_path),
+        }
+
+    return {
+        "schema_version": 1,
+        "dataset": str(dataset_path),
+        "seed": cfg.seed,
+        "train_ratio": cfg.train_ratio,
+        "val_ratio": cfg.val_ratio,
+        "test_ratio": round(1 - cfg.train_ratio - cfg.val_ratio, 10),
+        "image_size": cfg.image_size,
+        "batch_size": cfg.batch_size,
+        "models": selected_models(models),
+        "splits": {
+            "train": [serialize_pair(pair) for pair in train_pairs],
+            "val": [serialize_pair(pair) for pair in val_pairs],
+            "test": [serialize_pair(pair) for pair in test_pairs],
+        },
+    }
+
+
+def write_split_manifest(
+    output_path: Path,
+    dataset_path: Path,
+    pairs: list[tuple[Path, Path]],
+    cfg: Config,
+    models: list[str] | None = None,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest = build_split_manifest(dataset_path, pairs, cfg, models)
+    output_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+
+def _display_path(path: Path, dataset_path: Path) -> str:
+    try:
+        return str(path.relative_to(dataset_path))
+    except ValueError:
+        return str(path)
 
 
 def selected_models(models: list[str] | None) -> list[str]:
@@ -160,6 +224,11 @@ def main(argv: list[str] | None = None) -> int:
     pairs = load_pairs(dataset_path)
     validate_pair_files(pairs)
     print(f"Total pairs: {len(pairs)}")
+
+    if args.split_manifest:
+        manifest_path = Path(args.split_manifest).expanduser().resolve()
+        write_split_manifest(manifest_path, dataset_path, pairs, cfg, args.models)
+        print(f"Split manifest: {manifest_path}")
 
     if args.dry_run:
         print_dry_run_summary(dataset_path, pairs, cfg, args.models)
