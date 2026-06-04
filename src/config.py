@@ -24,11 +24,13 @@ class Config:
     val_ratio: float = 0.15
     test_ratio: float = 0.15
     checkpoint_dir: Path = field(default_factory=lambda: Path("checkpoints"))
-    device: object = field(init=False)
-    use_amp: bool = field(init=False)
+    device: object = field(init=False, default=None)
+    use_amp: bool = field(init=False, default=False)
 
     def __post_init__(self):
         self.validate()
+
+    def initialize_runtime(self) -> None:
         torch = require_torch()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.use_amp = torch.cuda.is_available()
@@ -57,10 +59,10 @@ class Config:
 
 
 def seed_everything(seed: int):
-    torch = require_torch()
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
+    torch = require_torch()
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True

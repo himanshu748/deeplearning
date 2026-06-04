@@ -16,6 +16,7 @@ This is a reproducible training scaffold: dataset discovery, deterministic train
 
 ```bash
 pip install -r requirements.txt
+python train.py --data-dir /path/to/forest-dataset --dry-run
 python train.py --data-dir /path/to/forest-dataset --epochs 5 --models unet
 ```
 
@@ -33,6 +34,7 @@ If `--data-dir` is omitted, the CLI downloads the Kaggle dataset with `kagglehub
 --models          Architectures to train: unet, unet_attention, deeplabv3plus
 --data-dir        Path to local dataset (auto-downloads from Kaggle if omitted)
 --seed            Random seed (default: 42)
+--dry-run         Validate config, dataset pairing, and splits without training
 ```
 
 ## Verification
@@ -44,7 +46,13 @@ PYTHONPYCACHEPREFIX=/private/tmp/deeplearning-pycache python3 -m compileall trai
 python3 -m unittest discover -s tests
 ```
 
-The lightweight tests cover split determinism, configuration validation, and local dataset image/mask pairing. They do not download Kaggle data or train a model.
+The lightweight tests cover split determinism, configuration validation, CLI dry-run helpers, import-safe model validation, and local dataset image/mask pairing. They do not download Kaggle data or train a model.
+
+Use `--dry-run` before any GPU run to confirm the local dataset is discoverable and produces non-empty train/validation/test splits. With `--data-dir`, this path does not build models, create DataLoaders, initialize Torch runtime state, or create checkpoint directories:
+
+```bash
+python train.py --data-dir /path/to/forest-dataset --dry-run
+```
 
 ## Docker
 
