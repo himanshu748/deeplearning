@@ -26,7 +26,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--models", nargs="+", default=None, choices=MODEL_CHOICES,
                         help="Architectures to train: unet, unet_attention, deeplabv3plus")
     parser.add_argument("--data-dir", type=str, default=None,
-                        help="Path to dataset. Downloads from Kaggle if not provided.")
+                        help="Path to a local dataset.")
+    parser.add_argument(
+        "--download-data",
+        action="store_true",
+        help="Download the Kaggle dataset when --data-dir is omitted.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--dry-run",
@@ -55,12 +60,18 @@ def build_config(args: argparse.Namespace) -> Config:
     return cfg
 
 
-def resolve_dataset_path(data_dir: str | None) -> Path:
+def resolve_dataset_path(data_dir: str | None, *, download_data: bool = False) -> Path:
     if data_dir:
         dataset_path = Path(data_dir).expanduser().resolve()
         if not dataset_path.exists():
             raise FileNotFoundError(f"Dataset path does not exist: {dataset_path}")
         return dataset_path
+
+    if not download_data:
+        raise RuntimeError(
+            "No local dataset was provided. Pass --data-dir /path/to/dataset, "
+            "or add --download-data to fetch the Kaggle dataset."
+        )
 
     print("Downloading dataset from Kaggle...")
     kagglehub = require_kagglehub()
@@ -143,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = build_config(args)
 
-    dataset_path = resolve_dataset_path(args.data_dir)
+    dataset_path = resolve_dataset_path(args.data_dir, download_data=args.download_data)
     print(f"Dataset: {dataset_path}")
 
     pairs = load_pairs(dataset_path)

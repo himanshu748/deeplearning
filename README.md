@@ -20,7 +20,7 @@ python train.py --data-dir /path/to/forest-dataset --dry-run
 python train.py --data-dir /path/to/forest-dataset --epochs 5 --models unet
 ```
 
-If `--data-dir` is omitted, the CLI downloads the Kaggle dataset with `kagglehub`. Configure Kaggle credentials outside the repo; never commit `kaggle.json`.
+The CLI is local-first by default. If `--data-dir` is omitted, it refuses to continue unless you explicitly add `--download-data` to fetch the Kaggle dataset with `kagglehub`. Configure Kaggle credentials outside the repo; never commit `kaggle.json`.
 
 ## CLI Options
 
@@ -32,7 +32,8 @@ If `--data-dir` is omitted, the CLI downloads the Kaggle dataset with `kagglehub
 --num-workers     DataLoader worker processes (default: 4)
 --checkpoint-dir  Directory for checkpoints/results (default: checkpoints)
 --models          Architectures to train: unet, unet_attention, deeplabv3plus
---data-dir        Path to local dataset (auto-downloads from Kaggle if omitted)
+--data-dir        Path to local dataset
+--download-data   Download Kaggle dataset if --data-dir is omitted
 --seed            Random seed (default: 42)
 --dry-run         Validate config, dataset pairing, and splits without training
 ```
@@ -83,6 +84,6 @@ docker run --gpus all -v /path/to/dataset:/data forestsight --data-dir /data --e
 
 ## Dataset
 
-[Forest Aerial Images for Segmentation](https://www.kaggle.com/datasets/quadeer15sh/augmented-forest-segmentation) (Kaggle). Auto-downloaded via `kagglehub`
+[Forest Aerial Images for Segmentation](https://www.kaggle.com/datasets/quadeer15sh/augmented-forest-segmentation) (Kaggle). Download it explicitly with `--download-data`, or provide a local copy with `--data-dir`.
 
 Expected local layout can be either explicit `images/` and `masks/` directories, or compatible image/mask directories whose files share stems such as `sample.png`, `sample_mask.png`, or `sample_sat_01.png` / `sample_mask_01.png`.

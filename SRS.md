@@ -83,7 +83,7 @@ This document specifies the software requirements for **ForestSight AI** -- a de
 
 ```mermaid
 graph LR
-    A[Satellite Image Capture] --> B[Kaggle Dataset Download]
+    A[Satellite Image Capture] --> B[Local Dataset or Explicit Kaggle Download]
     B --> C[Preprocessing & Augmentation]
     C --> D[Model Training -- 3 Architectures]
     D --> E[Evaluation & Comparison]
@@ -219,7 +219,7 @@ forest_detection/
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-01 | Auto-download dataset from Kaggle | High |
+| FR-01 | Use a local dataset by default; download Kaggle data only when explicitly requested | High |
 | FR-02 | Validate image-mask pairs | High |
 | FR-03 | Train/Val/Test split (70/15/15) | High |
 | FR-04 | Albumentations augmentation | High |

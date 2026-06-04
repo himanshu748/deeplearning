@@ -22,6 +22,10 @@ class TrainCliTest(unittest.TestCase):
         with self.assertRaisesRegex(FileNotFoundError, "Dataset path does not exist"):
             train.resolve_dataset_path("/tmp/definitely-missing-forest-dataset")
 
+    def test_resolve_dataset_path_requires_explicit_download(self):
+        with self.assertRaisesRegex(RuntimeError, "--download-data"):
+            train.resolve_dataset_path(None)
+
     def test_summarize_dataset_returns_deterministic_split_counts(self):
         pairs = [(Path(f"image-{idx}.png"), Path(f"mask-{idx}.png")) for idx in range(10)]
         cfg = Config(seed=7)
@@ -62,6 +66,17 @@ class TrainCliTest(unittest.TestCase):
             resolved = train.resolve_dataset_path(tmp)
 
         self.assertEqual(resolved, Path(tmp).resolve())
+
+    def test_download_data_uses_kagglehub_when_explicit(self):
+        with patch("train.require_kagglehub") as require_kagglehub, patch("sys.stdout"):
+            require_kagglehub.return_value.dataset_download.return_value = "/tmp/kaggle-dataset"
+
+            resolved = train.resolve_dataset_path(None, download_data=True)
+
+        self.assertEqual(resolved, Path("/tmp/kaggle-dataset"))
+        require_kagglehub.return_value.dataset_download.assert_called_once_with(
+            "quadeer15sh/augmented-forest-segmentation"
+        )
 
     def test_cli_entry_returns_failure_without_traceback_for_bad_path(self):
         with patch("sys.stderr") as stderr:
